@@ -38,7 +38,13 @@ data:
 	mkdir -p data
 	make download
 
-public/index.html: bin/render-template config.yml src/*
+.babelrc:
+	@echo "{ \"presets\": [\"es2015\"] }" > .babelrc
+
+src/script.js: src/es6/script.js.es6 .babelrc
+		node_modules/.bin/babel $< -o $@
+
+public/index.html: bin/render-template config.yml src/* src/script.js
 	mkdir -p data
 	mkdir -p page-templates
 	bin/render-template -o $@
@@ -58,7 +64,7 @@ download:
 ~/Development/keys/nyt-imgix.json:
 	mkdir -p ~/Development/keys
 	scp nytg@newsdev.ec2.nytimes.com:/mnt/var/git/apps/credentials/nyt-imgix.json  ~/Development/keys/nyt-imgix.json
-	
+
 
 # ASSETS
 
@@ -71,7 +77,7 @@ videos: install-assets.txt
 
 images: install-assets.txt ~/Development/keys/nyt-imgix.json
 	@node_modules/.bin/grunt images
-		
+
 sprite: install-assets.txt
 	@type gm >/dev/null 2>&1 || { echo >&2 "\033[31mWARNING:\033[0m GraphicsMagick required. To install, run:\"brew install GraphicsMagick\""; exit 1; }
 	@node_modules/.bin/grunt makeSprite
