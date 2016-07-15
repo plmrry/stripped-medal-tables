@@ -1,0 +1,59 @@
+
+.has-top-ad .story.theme-interactive,
+.has-ribbon .story.theme-interactive {
+  margin-top: 10px;
+}
+.story.theme-interactive .comments-button.theme-kicker {
+  margin-top: 0;
+}
+.page-interactive-default .story.theme-main .story-header {
+  border-bottom: none;
+}
+.story.theme-interactive .story-meta .kicker {
+  margin-bottom: 22px;
+}
+.viewport-medium-10 .story.theme-interactive .story-meta .kicker {
+  margin-bottom: 24px;
+}
+.story.theme-interactive .story-header .story-meta .kicker-container .sharetools {
+  position: relative;
+  left: auto;
+  bottom: auto;
+  width: auto;
+  margin-top: -6px;
+  float: right;
+  clear: none;
+}
+.story.theme-interactive .story-header .story-meta .interactive-kicker {
+  float: left;
+  width: 65%;
+  display: inline-block;
+}
+.page-interactive-default .story.theme-main .story-header {
+  margin-bottom: 0;
+}
+.page-interactive-default .story.theme-main .story-header .story-meta {
+  margin-bottom: 10px;
+}
+.story.theme-minimal .sharetools.layout-horizontal{
+  width:auto;
+  margin-top:11px;
+}
+.story.theme-minimal .sharetools.layout-horizontal .sharetool {
+  display: inline-block;
+  border-top: 0;
+}
+.story.theme-minimal .sharetools.layout-horizontal .sharetool:first-child a {
+  margin-left: 0;
+  padding-left: 0;
+  border-left: none;
+}
+.story.theme-minimal .sharetools.layout-horizontal .sharetool a {
+  padding-left: 15px;
+  padding-right: 5px;
+  height: 20px;
+  border-left: 1px solid #e2e2e2;
+}
+.story.theme-minimal .sharetools.layout-horizontal .sharetool a:hover {
+  background-color: transparent;  
+}
