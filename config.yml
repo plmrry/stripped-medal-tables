@@ -29,7 +29,7 @@ scoop_publish_fields: true
 # scoop_external_edit_key:
 
 # PREVIEW SETTINGS
-page_template: nyt5-streamlined     # nyt5-article-embed, local:index, hp-bcol-photospot, hp-acol
+page_template: local:nyt5-streamlined     # nyt5-article-embed, local:index, hp-bcol-photospot, hp-acol
 display_style: standard          # standard, blank or minimal (blank and minimal must use page_template: local:index)
 # section_name: U.S.             # Upshot, Magazine (must use page_template: local:index)
 # display_overrides:
@@ -58,11 +58,12 @@ make_cmd: download
 #   fruits: 908
 # Put your Google Spreadsheet in the "Preview docs" folder
 # or share it with 511847675586-dvu01fndl7cf8nvqhce6j9tuhbgt10rf@developer.gserviceaccount.com
-# google_spreadsheets:
-#   - name: "rows"
-#     key: "1qZ1LNZBqYP84I-YgPZl5nZrLpRaM9WbbyINuFGS2lhI"
-#     oauth: "511847675586-dvu01fndl7cf8nvqhce6j9tuhbgt10rf.json"
-#     sheet: "mens_halfpipe"
+google_spreadsheets:
+  - name: "rows"
+    # key: "1qZ1LNZBqYP84I-YgPZl5nZrLpRaM9WbbyINuFGS2lhI"
+    key: "1RVacG9Kii6cSKdJBTBcSMvLsteVFjmk3BUZ8ANAOtJg"
+    oauth: "511847675586-dvu01fndl7cf8nvqhce6j9tuhbgt10rf.json"
+    sheet: "Sheet1"
 # data_urls:
 #   slideshow: http://www.nytimes.com/slideshow/2014/02/09/magazine/09look-Croagh-Patrick.slideshow.json
 
