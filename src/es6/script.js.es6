@@ -6,7 +6,7 @@ require([
   'foundation/views/page-manager',
   'nyt5/analytics',
   'lib/text-balancer', // uncomment to balance headlines
-  'd3/3'
+  'node_modules/d3/build/d3'
   // 'queue/1'
   // 'resizerScript'     // uncomment this line to include resizerScript
   // 'templates'         // uncomment to use src/templates
@@ -14,7 +14,7 @@ require([
 
   // begin code for your graphic here:
 
-d3.select('body').append('h1').text('hello')
+  d3.select('#g-graphic').append('h1').text('hello');
 
 
 

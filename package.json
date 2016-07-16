@@ -31,5 +31,8 @@
   },
   "scripts": {
     "test": "node_modules/vows/bin/vows"
+  },
+  "dependencies": {
+    "d3": "^4.1.1"
   }
 }

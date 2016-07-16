@@ -1,7 +1,7 @@
 'use strict';
 
 require(['_nytg/NYTG_SLUG/assets', '_nytg/NYTG_SLUG/big-assets', 'jquery/nyt', 'underscore/1.6', 'foundation/views/page-manager', 'nyt5/analytics', 'lib/text-balancer', // uncomment to balance headlines
-'d3/3'
+'node_modules/d3/build/d3'
 // 'queue/1'
 // 'resizerScript'     // uncomment this line to include resizerScript
 // 'templates'         // uncomment to use src/templates
@@ -9,7 +9,7 @@ require(['_nytg/NYTG_SLUG/assets', '_nytg/NYTG_SLUG/big-assets', 'jquery/nyt', '
 
   // begin code for your graphic here:
 
-  d3.select('body').append('h1').text('hello');
+  d3.select('#g-graphic').append('h1').text('hello');
 
   // uncomment to balance headline and leadin
   // balanceText('.interactive-headline, .interactive-leadin');
