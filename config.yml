@@ -1,6 +1,6 @@
 ---
 # CONTENT
-headline: Untitled Graphic
+headline: Stripped Medals
 leadin: Lorem ipsum dolor sit amet, consectetur adipisicing elit.
 byline: By THE NEW YORK TIMES
 credit:
@@ -29,7 +29,7 @@ scoop_publish_fields: true
 # scoop_external_edit_key:
 
 # PREVIEW SETTINGS
-page_template: local:nyt5-streamlined     # nyt5-article-embed, local:index, hp-bcol-photospot, hp-acol
+page_template: nyt5-streamlined # local:nyt5-streamlined     # nyt5-article-embed, local:index, hp-bcol-photospot, hp-acol
 display_style: standard          # standard, blank or minimal (blank and minimal must use page_template: local:index)
 # section_name: U.S.             # Upshot, Magazine (must use page_template: local:index)
 # display_overrides:
@@ -53,7 +53,7 @@ display_style: standard          # standard, blank or minimal (blank and minimal
 make_cmd: download
 
 # DATA LOADING
-# load_data_manually: true       # If true, run 'make download' to get data
+load_data_manually: true       # If true, run 'make download' to get data
 # data_vault:
 #   fruits: 908
 # Put your Google Spreadsheet in the "Preview docs" folder

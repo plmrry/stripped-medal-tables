@@ -9,6 +9,7 @@
   var _gaq = _gaq || [];
   define('_nytg/NYTG_SLUG/assets', function() { return '_assets/'; });
   define('_nytg/NYTG_SLUG/big-assets', function() { return '_big_assets/'; });
+  define('_nytg/data', function() { return <%= JSON.stringify(data) %>; })
 
   define('shared/page/tech-jobs', function() { });
   require(['foundation/main'], function() {
