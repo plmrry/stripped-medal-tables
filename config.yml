@@ -64,6 +64,11 @@ google_spreadsheets:
     key: "1RVacG9Kii6cSKdJBTBcSMvLsteVFjmk3BUZ8ANAOtJg"
     oauth: "511847675586-dvu01fndl7cf8nvqhce6j9tuhbgt10rf.json"
     sheet: "Sheet1"
+  - name: "rows_v2"
+    # key: "1qZ1LNZBqYP84I-YgPZl5nZrLpRaM9WbbyINuFGS2lhI"
+    key: "1RVacG9Kii6cSKdJBTBcSMvLsteVFjmk3BUZ8ANAOtJg"
+    oauth: "511847675586-dvu01fndl7cf8nvqhce6j9tuhbgt10rf.json"
+    sheet: "demo_data"
 # data_urls:
 #   slideshow: http://www.nytimes.com/slideshow/2014/02/09/magazine/09look-Croagh-Patrick.slideshow.json
 
