@@ -1,5 +1,7 @@
 'use strict';
 
+var _slicedToArray = function () { function sliceIterator(arr, i) { var _arr = []; var _n = true; var _d = false; var _e = undefined; try { for (var _i = arr[Symbol.iterator](), _s; !(_n = (_s = _i.next()).done); _n = true) { _arr.push(_s.value); if (i && _arr.length === i) break; } } catch (err) { _d = true; _e = err; } finally { try { if (!_n && _i["return"]) _i["return"](); } finally { if (_d) throw _e; } } return _arr; } return function (arr, i) { if (Array.isArray(arr)) { return arr; } else if (Symbol.iterator in Object(arr)) { return sliceIterator(arr, i); } else { throw new TypeError("Invalid attempt to destructure non-iterable instance"); } }; }();
+
 // jshint esversion: 6, unused: true, undef: true
 /* global require, console, window */ // jshint ignore:line
 
@@ -28,6 +30,9 @@ function version_2(d3, $, Rx) {
       return d3.ascending(parseInt(a.oly_year), parseInt(b.oly_year));
     });
     data.shift();
+    data.forEach(function (d, i) {
+      return d.id = i;
+    });
     var years = data.map(function (d) {
       return parseInt(d.oly_year);
     }).concat(data.map(function (d) {
@@ -36,12 +41,36 @@ function version_2(d3, $, Rx) {
     var year_extent = d3.extent(years);
     var x_domain = [new Date(year_extent[0], 0, 1), new Date(year_extent[1] + 1, 0, 1)];
 
+    var root = get_hierarchy(data);
+
+    d3.cluster().size([height, 0])(root);
+
+    var leaves = root.leaves();
+
+    var y_cluster = d3.scaleOrdinal().domain(leaves.map(function (d, i) {
+      return i;
+    })).range(leaves.map(function (d) {
+      return d.x;
+    }));
+
+    function get_hierarchy(data) {
+      var nested = d3.nest().key(function () {
+        return "_root";
+      }).key(function (d) {
+        return d.ath_first_name + '-' + d.ath_last_name + '-' + d.oly_year;
+      }).entries(data);
+      var tree = d3.hierarchy(nested[0], function (d) {
+        return d.values;
+      });
+      return tree;
+    }
+
     var x = d3.scaleTime().domain(x_domain);
 
     var x_axis = d3.axisBottom(x).tickSize(-height).tickSizeOuter(0);
 
-    var y = d3.scalePoint().domain(data.map(function (d, i) {
-      return i;
+    var y = d3.scalePoint().domain(data.map(function (d) {
+      return d.id;
     })).range([0, height]).padding(0.5);
 
     var svg = container.append('svg').attr('id', 'g-oly-1').classed('oly-chart', true).attr('height', height + margin.top + margin.bottom).style('border', '1px solid #ddd');
@@ -52,18 +81,11 @@ function version_2(d3, $, Rx) {
 
     var rows_join = frame.selectAll('g.row').data(data);
 
-    var rows = rows_join.enter().append('g').classed('row', true)
-    // .each(function() { d3.select(this).append('circle').attr('r', 2); })
-    .each(function (d) {
+    var rows = rows_join.enter().append('g').classed('row', true).each(function (d) {
       d3.select(this).append('g').classed('line', true).append('line').style('stroke', '#555');
-      // .datum(123);
-      // .datum(d => getPoints(d).map(d => d.parsed_date));
     }).merge(rows_join).attr('transform', function (d, i) {
-      return 'translate(0, ' + y(i) + ')';
+      return 'translate(0, ' + y_cluster(i) + ')';
     });
-
-    // const line_join = rows.selectAll('g.line')
-    //   .data(d => [getPoints(d)])
 
     var MONTH = 8 - 1; // August
     var DAY = 12;
@@ -89,14 +111,23 @@ function version_2(d3, $, Rx) {
         d3.select(this).append('circle').attr('r', 4).style('fill', function (d) {
           return medal_color(d.datum.medal);
         });
-        d3.select(this).append('text').style('font-family', 'nyt-franklin').style('font-size', '0.7rem').style('fill', '#555').attr('dy', '-0.2rem').attr('dx', '0.3rem').text(function (_ref) {
-          var datum = _ref.datum;
-          return (datum.ath_first_name + ' ' + datum.ath_last_name).toUpperCase();
-        });
+        // d3.select(this).append('text')
+        //   .style('font-family', 'nyt-franklin')
+        //   .style('font-size', '0.7rem')
+        //   .style('fill', '#555')
+        //   .attr('dy', '-0.2rem')
+        //   .attr('dx', '0.3rem')
+        //   .text(({ datum }) => `${datum.ath_first_name} ${datum.ath_last_name}`.toUpperCase());
       }
     }).merge(points_join);
 
-    // rows.selectAll('g.point')
+    // debugger
+    var labels_join = frame.selectAll('g.label').data(root.children);
+
+    var labels = labels_join.enter().append('g').classed('label', true).append('text').style('font-family', 'nyt-franklin').style('font-size', '0.7rem').style('fill', '#555').attr('dy', '-0.2rem').attr('dx', '0.3rem').text(function (d) {
+      var o = d.children[0].data;
+      return (o.ath_first_name + ' ' + o.ath_last_name).toUpperCase();
+    }).merge(labels_join);
 
     var width$ = stream.fromEvent(window, 'resize').startWith(window).map(function () {
       return $(svg.node().parentNode).innerWidth();
@@ -114,13 +145,19 @@ function version_2(d3, $, Rx) {
       points.attr('transform', function (d) {
         return 'translate(' + x(d.parsed_date) + ', 0)';
       });
+      labels.attr('transform', function (parent) {
+        var _parent$children = _slicedToArray(parent.children, 1);
+
+        var data = _parent$children[0].data;
+
+        var parsed_date = getPoints(data)[0].parsed_date;
+        return 'translate(' + x(parsed_date) + ', ' + y_cluster(data.id) + ')';
+      });
       rows.select('line').datum(function (d) {
         return getPoints(d).map(function (d) {
           return d.parsed_date;
         });
-      })
-      // .attr('x0', d => { x; debugger })
-      .attr('x1', function (d) {
+      }).attr('x1', function (d) {
         return x(d[0]);
       }).attr('x2', function (d) {
         return x(d[1]);
@@ -173,11 +210,11 @@ function version_1(d3, $) {
       });
       var newWidth = svg.node().parentNode.clientWidth - margin.left - margin.right;
       x.rangeRound([0, newWidth]);
-      frame.selectAll('.point').attr('transform', function (_ref2) {
-        var year = _ref2.year;
-        var month = _ref2.month;
-        var day = _ref2.day;
-        var full_name = _ref2.full_name;
+      frame.selectAll('.point').attr('transform', function (_ref) {
+        var year = _ref.year;
+        var month = _ref.month;
+        var day = _ref.day;
+        var full_name = _ref.full_name;
 
         var date = new Date(year, parseInt(month) - 1, day);
         return 'translate(' + x(date) + ', ' + y(full_name) + ')';

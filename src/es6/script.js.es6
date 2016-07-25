@@ -31,10 +31,30 @@ function version_2(d3, $, Rx) {
 
     data.sort((a,b) => d3.ascending(parseInt(a.oly_year), parseInt(b.oly_year)));
     data.shift();
+    data.forEach((d, i) => d.id = i);
     const years = data.map(d => parseInt(d.oly_year))
       .concat(data.map(d => (new Date(d.decision_date).getFullYear())));
     const year_extent = d3.extent(years);
     const x_domain = [new Date(year_extent[0], 0, 1), new Date(year_extent[1] + 1, 0, 1)];
+
+    const root = get_hierarchy(data);
+
+    d3.cluster().size([ height, 0 ])(root);
+
+    const leaves = root.leaves();
+
+    const y_cluster = d3.scaleOrdinal()
+      .domain(leaves.map((d, i) => i))
+      .range(leaves.map(d => d.x));
+
+    function get_hierarchy(data) {
+      const nested = d3.nest()
+        .key(() => "_root")
+        .key(d => `${d.ath_first_name}-${d.ath_last_name}-${d.oly_year}`)
+        .entries(data);
+      const tree = d3.hierarchy(nested[0], d => d.values);
+      return tree;
+    }
 
     const x = d3.scaleTime()
       .domain(x_domain);
@@ -44,7 +64,7 @@ function version_2(d3, $, Rx) {
       .tickSizeOuter(0);
 
     const y = d3.scalePoint()
-      .domain(data.map((d,i) => i))
+      .domain(data.map(d => d.id))
       .range([0, height])
       .padding(0.5);
 
@@ -75,7 +95,7 @@ function version_2(d3, $, Rx) {
           .style('stroke', '#555');
       })
       .merge(rows_join)
-      .attr('transform', (d, i) => `translate(0, ${y(i)})`);
+      .attr('transform', (d, i) => `translate(0, ${y_cluster(i)})`);
 
     const MONTH = 8 - 1; // August
     const DAY = 12;
@@ -110,19 +130,37 @@ function version_2(d3, $, Rx) {
           d3.select(this).append('circle')
             .attr('r', 4)
             .style('fill', d => medal_color(d.datum.medal));
-          d3.select(this).append('text')
-            .style('font-family', 'nyt-franklin')
-            .style('font-size', '0.7rem')
-            .style('fill', '#555')
-            .attr('dy', '-0.2rem')
-            .attr('dx', '0.3rem')
-            .text(({ datum }) => `${datum.ath_first_name} ${datum.ath_last_name}`.toUpperCase());
+          // d3.select(this).append('text')
+          //   .style('font-family', 'nyt-franklin')
+          //   .style('font-size', '0.7rem')
+          //   .style('fill', '#555')
+          //   .attr('dy', '-0.2rem')
+          //   .attr('dx', '0.3rem')
+          //   .text(({ datum }) => `${datum.ath_first_name} ${datum.ath_last_name}`.toUpperCase());
         }
 
       })
       .merge(points_join);
 
-    // rows.selectAll('g.point')
+    // debugger
+    const labels_join = frame.selectAll('g.label')
+      .data(root.children);
+
+    const labels = labels_join
+      .enter()
+      .append('g')
+      .classed('label', true)
+      .append('text')
+      .style('font-family', 'nyt-franklin')
+      .style('font-size', '0.7rem')
+      .style('fill', '#555')
+      .attr('dy', '-0.2rem')
+      .attr('dx', '0.3rem')
+      .text(d => {
+        const o = d.children[0].data;
+        return `${o.ath_first_name} ${o.ath_last_name}`.toUpperCase();
+      })
+      .merge(labels_join);
 
     const width$ = stream.fromEvent(window, 'resize')
       .startWith(window)
@@ -142,9 +180,13 @@ function version_2(d3, $, Rx) {
           d3.select(this).selectAll('text').style('font-family', '"nyt-franklin"');
         });
       points.attr('transform', d => `translate(${x(d.parsed_date)}, 0)`);
+      labels.attr('transform', parent => {
+        const { children: [ { data } ] } = parent;
+        const parsed_date = getPoints(data)[0].parsed_date;
+        return `translate(${x(parsed_date)}, ${y_cluster(data.id)})`;
+      });
       rows.select('line')
         .datum(d => getPoints(d).map(d => d.parsed_date))
-        // .attr('x0', d => { x; debugger })
         .attr('x1', d => x(d[0]))
         .attr('x2', d => x(d[1]));
     });
