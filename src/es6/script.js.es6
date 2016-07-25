@@ -26,7 +26,7 @@ require([
 function version_2(d3, $, Rx) {
   const stream = Rx.Observable;
   return function(container, data) {
-    const margin = {top: 20, right: 20, bottom: 30, left: 40};
+    const margin = {top: 20, right: 40, bottom: 30, left: 40};
     const height = 200;
 
     data.sort((a,b) => d3.ascending(parseInt(a.oly_year), parseInt(b.oly_year)));
@@ -63,17 +63,17 @@ function version_2(d3, $, Rx) {
       .tickSize(-height)
       .tickSizeOuter(0);
 
-    const y = d3.scalePoint()
-      .domain(data.map(d => d.id))
-      .range([0, height])
-      .padding(0.5);
+    // const y = d3.scalePoint()
+    //   .domain(data.map(d => d.id))
+    //   .range([0, height])
+    //   .padding(0.5);
 
     const svg = container
       .append('svg')
       .attr('id', 'g-oly-1')
       .classed('oly-chart', true)
       .attr('height', height + margin.top + margin.bottom)
-      .style('border', '1px solid #ddd');
+      // .style('border', '1px solid #ddd');
 
     const frame = svg.append('g')
       .attr('transform', `translate(${margin.left}, ${margin.top})`);
@@ -88,7 +88,7 @@ function version_2(d3, $, Rx) {
     const rows = rows_join.enter()
       .append('g')
       .classed('row', true)
-      .each(function(d) {
+      .each(function() {
         d3.select(this)
           .append('g').classed('line', true)
           .append('line')
@@ -168,7 +168,7 @@ function version_2(d3, $, Rx) {
 
     width$.subscribe(chartWidth => {
       console.log(chartWidth);
-      x_axis.ticks(d3.timeYear.every(2))
+      x_axis.ticks(d3.timeYear.every(2));
       const width = chartWidth - margin.left - margin.right;
       x.range([0, width]);
       container.selectAll('.oly-chart')

@@ -29111,7 +29111,7 @@ require(['_nytg/NYTG_SLUG/assets', '_nytg/NYTG_SLUG/big-assets', 'jquery/nyt', '
 function version_2(d3, $, Rx) {
   var stream = Rx.Observable;
   return function (container, data) {
-    var margin = { top: 20, right: 20, bottom: 30, left: 40 };
+    var margin = { top: 20, right: 40, bottom: 30, left: 40 };
     var height = 200;
 
     data.sort(function (a, b) {
@@ -29157,9 +29157,10 @@ function version_2(d3, $, Rx) {
 
     var x_axis = d3.axisBottom(x).tickSize(-height).tickSizeOuter(0);
 
-    var y = d3.scalePoint().domain(data.map(function (d) {
-      return d.id;
-    })).range([0, height]).padding(0.5);
+    // const y = d3.scalePoint()
+    //   .domain(data.map(d => d.id))
+    //   .range([0, height])
+    //   .padding(0.5);
 
     var svg = container.append('svg').attr('id', 'g-oly-1').classed('oly-chart', true).attr('height', height + margin.top + margin.bottom).style('border', '1px solid #ddd');
 
@@ -29169,7 +29170,7 @@ function version_2(d3, $, Rx) {
 
     var rows_join = frame.selectAll('g.row').data(data);
 
-    var rows = rows_join.enter().append('g').classed('row', true).each(function (d) {
+    var rows = rows_join.enter().append('g').classed('row', true).each(function () {
       d3.select(this).append('g').classed('line', true).append('line').style('stroke', '#555');
     }).merge(rows_join).attr('transform', function (d, i) {
       return 'translate(0, ' + y_cluster(i) + ')';
