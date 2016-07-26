@@ -29162,7 +29162,8 @@ function version_2(d3, $, Rx) {
     //   .range([0, height])
     //   .padding(0.5);
 
-    var svg = container.append('svg').attr('id', 'g-oly-1').classed('oly-chart', true).attr('height', height + margin.top + margin.bottom).style('border', '1px solid #ddd');
+    var svg = container.append('svg').attr('id', 'g-oly-1').classed('oly-chart', true).attr('height', height + margin.top + margin.bottom);
+    // .style('border', '1px solid #ddd');
 
     var frame = svg.append('g').attr('transform', 'translate(' + margin.left + ', ' + margin.top + ')');
 

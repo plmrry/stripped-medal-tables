@@ -72,7 +72,7 @@ function version_2(d3, $, Rx) {
       .append('svg')
       .attr('id', 'g-oly-1')
       .classed('oly-chart', true)
-      .attr('height', height + margin.top + margin.bottom)
+      .attr('height', height + margin.top + margin.bottom);
       // .style('border', '1px solid #ddd');
 
     const frame = svg.append('g')
