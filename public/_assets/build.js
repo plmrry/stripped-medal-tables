@@ -29104,15 +29104,15 @@ require(['_nytg/NYTG_SLUG/assets', '_nytg/NYTG_SLUG/big-assets', 'jquery/nyt', '
   // jshint ignore:line
   // version_1(d3, $)(data);
   // require(['node_modules/d3-jetpack/d3-jetpack'], function(_d3) { debugger });
-  version_2(d3, $, Rx)(d3.select('#g-graphic'), data.rows_v2);
+  version_2(d3, $, Rx, _)(d3.select('#g-graphic'), data.rows_v2);
   // console.log(data.rows_v2);
 }); // end require
 
-function version_2(d3, $, Rx) {
+function version_2(d3, $, Rx, _) {
   var stream = Rx.Observable;
   return function (container, data) {
     var margin = { top: 20, right: 40, bottom: 30, left: 40 };
-    var height = 200;
+    var height = 400;
 
     data.sort(function (a, b) {
       return d3.ascending(parseInt(a.oly_year), parseInt(b.oly_year));
@@ -29142,6 +29142,7 @@ function version_2(d3, $, Rx) {
     }));
 
     function get_hierarchy(data) {
+      // data = _.sortBy(data, d => d.medal === 'g' ? 2 : d.medal === 's' ? 1 : 0);
       var nested = d3.nest().key(function () {
         return "_root";
       }).key(function (d) {
@@ -29196,9 +29197,11 @@ function version_2(d3, $, Rx) {
 
     var points_join = rows.selectAll('g.point').data(getPoints);
 
+    var RADIUS = 4;
+
     var points = points_join.enter().append('g').classed('point', true).each(function (d) {
       if (d.type === 'awarded') {
-        d3.select(this).append('circle').attr('r', 4).style('fill', function (d) {
+        d3.select(this).append('circle').attr('r', RADIUS).style('fill', function (d) {
           return medal_color(d.datum.medal);
         });
         // d3.select(this).append('text')
@@ -29233,7 +29236,10 @@ function version_2(d3, $, Rx) {
         d3.select(this).selectAll('text').style('font-family', '"nyt-franklin"');
       });
       points.attr('transform', function (d) {
-        return 'translate(' + x(d.parsed_date) + ', 0)';
+        var circle = d3.select(this).select('circle');
+        var radius = circle.size() ? parseFloat(circle.attr('r')) : 0;
+        var offset = radius + 1;
+        return 'translate(' + (x(d.parsed_date) - offset) + ', 0)';
       });
       labels.attr('transform', function (parent) {
         var _parent$children = _slicedToArray(parent.children, 1);

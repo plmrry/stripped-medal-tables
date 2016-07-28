@@ -19,15 +19,15 @@ require([
 ], function(NYTG_ASSETS, NYTG_BIG_ASSETS, $, _, PageManager, Analytics, balanceText, d3, data, Rx) { // jshint ignore:line
   // version_1(d3, $)(data);
   // require(['node_modules/d3-jetpack/d3-jetpack'], function(_d3) { debugger });
-  version_2(d3, $, Rx)(d3.select('#g-graphic'), data.rows_v2);
+  version_2(d3, $, Rx, _)(d3.select('#g-graphic'), data.rows_v2);
   // console.log(data.rows_v2);
 }); // end require
 
-function version_2(d3, $, Rx) {
+function version_2(d3, $, Rx, _) {
   const stream = Rx.Observable;
   return function(container, data) {
     const margin = {top: 20, right: 40, bottom: 30, left: 40};
-    const height = 200;
+    const height = 400;
 
     data.sort((a,b) => d3.ascending(parseInt(a.oly_year), parseInt(b.oly_year)));
     data.shift();
@@ -48,6 +48,7 @@ function version_2(d3, $, Rx) {
       .range(leaves.map(d => d.x));
 
     function get_hierarchy(data) {
+      // data = _.sortBy(data, d => d.medal === 'g' ? 2 : d.medal === 's' ? 1 : 0);
       const nested = d3.nest()
         .key(() => "_root")
         .key(d => `${d.ath_first_name}-${d.ath_last_name}-${d.oly_year}`)
@@ -122,13 +123,15 @@ function version_2(d3, $, Rx) {
     const points_join = rows.selectAll('g.point')
       .data(getPoints);
 
+    const RADIUS = 4;
+
     const points = points_join.enter()
       .append('g')
       .classed('point', true)
       .each(function(d) {
         if (d.type === 'awarded') {
           d3.select(this).append('circle')
-            .attr('r', 4)
+            .attr('r', RADIUS)
             .style('fill', d => medal_color(d.datum.medal));
           // d3.select(this).append('text')
           //   .style('font-family', 'nyt-franklin')
@@ -179,7 +182,12 @@ function version_2(d3, $, Rx) {
           d3.select(this).selectAll('line').style('stroke', '#ddd');
           d3.select(this).selectAll('text').style('font-family', '"nyt-franklin"');
         });
-      points.attr('transform', d => `translate(${x(d.parsed_date)}, 0)`);
+      points.attr('transform', function(d) {
+        const circle = d3.select(this).select('circle');
+        const radius = circle.size() ? parseFloat(circle.attr('r')) : 0;
+        const offset = radius + 1;
+        return `translate(${x(d.parsed_date)-offset}, 0)`;
+      });
       labels.attr('transform', parent => {
         const { children: [ { data } ] } = parent;
         const parsed_date = getPoints(data)[0].parsed_date;
