@@ -91,7 +91,7 @@ function version_2(d3, $, Rx, _) {
     });
 
     var MONTH = 8 - 1; // August
-    var DAY = 12;
+    var DAY = 1;
 
     function getPoints(datum) {
       return [{
@@ -165,6 +165,9 @@ function version_2(d3, $, Rx, _) {
         return getPoints(d).map(function (d) {
           return d.parsed_date;
         });
+      }).each(function (d) {
+        var pixel_length = x(d[1]) - x(d[0]);
+        console.log(pixel_length);
       }).attr('x1', function (d) {
         return x(d[0]);
       }).attr('x2', function (d) {

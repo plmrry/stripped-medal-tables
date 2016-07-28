@@ -99,7 +99,7 @@ function version_2(d3, $, Rx, _) {
       .attr('transform', (d, i) => `translate(0, ${y_cluster(i)})`);
 
     const MONTH = 8 - 1; // August
-    const DAY = 12;
+    const DAY = 1;
 
     function getPoints(datum) {
       return [
@@ -195,6 +195,10 @@ function version_2(d3, $, Rx, _) {
       });
       rows.select('line')
         .datum(d => getPoints(d).map(d => d.parsed_date))
+        .each(d => {
+          const pixel_length = x(d[1]) - x(d[0]);
+          console.log(pixel_length);
+        })
         .attr('x1', d => x(d[0]))
         .attr('x2', d => x(d[1]));
     });
