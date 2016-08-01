@@ -29224,7 +29224,6 @@ function version_2(d3, $, Rx, _) {
         var data = _parent$children[0].data;
 
         var parsed_date = getPoints(data)[0].parsed_date;
-        console.log(data.id);
         return 'translate(' + x(parsed_date) + ', ' + y_cluster(data.id) + ')';
       });
       rows.select('line').datum(function (d) {
