@@ -1,6 +1,6 @@
 'use strict';
 
-var _slicedToArray = function () { function sliceIterator(arr, i) { var _arr = []; var _n = true; var _d = false; var _e = undefined; try { for (var _i = arr[Symbol.iterator](), _s; !(_n = (_s = _i.next()).done); _n = true) { _arr.push(_s.value); if (i && _arr.length === i) break; } } catch (err) { _d = true; _e = err; } finally { try { if (!_n && _i["return"]) _i["return"](); } finally { if (_d) throw _e; } } return _arr; } return function (arr, i) { if (Array.isArray(arr)) { return arr; } else if (Symbol.iterator in Object(arr)) { return sliceIterator(arr, i); } else { throw new TypeError("Invalid attempt to destructure non-iterable instance"); } }; }();
+var _typeof = typeof Symbol === "function" && typeof Symbol.iterator === "symbol" ? function (obj) { return typeof obj; } : function (obj) { return obj && typeof Symbol === "function" && obj.constructor === Symbol ? "symbol" : typeof obj; };
 
 // jshint esversion: 6, unused: true, undef: true
 /* global require, console, window */ // jshint ignore:line
@@ -8,215 +8,62 @@ var _slicedToArray = function () { function sliceIterator(arr, i) { var _arr = [
 require(['_nytg/NYTG_SLUG/assets', '_nytg/NYTG_SLUG/big-assets', 'jquery/nyt', 'underscore/1.6', 'foundation/views/page-manager', 'nyt5/analytics', 'lib/text-balancer', // uncomment to balance headlines
 'node_modules/d3/build/d3', '_nytg/data', 'node_modules/rx/dist/rx.all'], function (NYTG_ASSETS, NYTG_BIG_ASSETS, $, _, PageManager, Analytics, balanceText, d3, data, Rx) {
   // jshint ignore:line
-  version_2(d3, $, Rx, _)(d3.select('#g-graphic'), data.rows_v2);
+  doping(d3, $, Rx, _)(d3.select('#g-graphic'), data.stripped_data_v3);
 }); // end require
 
-function version_2(d3, $, Rx, _) {
+function doping(d3, $, Rx, _) {
   // jshint ignore:line
-  var stream = Rx.Observable;
   return function (container, data) {
-    var margin = { top: 20, right: 40, bottom: 30, left: 40 };
-    var height = 400;
-
-    data.sort(function (a, b) {
-      return d3.ascending(parseInt(a.oly_year), parseInt(b.oly_year));
+    // jshint ignore:line
+    var year = data.filter(function (d) {
+      return parseInt(d.oly_year) === 2008;
     });
-    data.shift();
-    data.forEach(function (d, i) {
-      return d.id = i;
-    });
+    var parsed = year.map(function (row) {
+      // NOTE: Assuming August 1st
+      var award_date = new Date(parseInt(row.oly_year), 8 - 1, 1);
+      var stripped_date = new Date(row.stripped_date);
+      var dates = [award_date, stripped_date];
+      var stripped_medal = row.stripped_medal.toLowerCase();
+      var was_upgraded = row.was_upgraded.match(/yes/);
+      if (!was_upgraded) {
+        // console.info('was not upgraded');
+        var medals = [{ event: row.event, medal: stripped_medal }];
+        medals[0].dates = [{ date: dates[0], country: row.country }, { date: dates[1], coutnry: null }];
+        return medals;
+      } else {
+        var _ret = function () {
+          var parsed = row.upgrade_athletes.match(/\(.+?\)/g).map(function (d) {
+            return d.match(/\((.+?),.+?,(.+?)\)/);
+          });
+          var medals = parsed.map(function (d) {
+            return d[1];
+          });
+          var other_countries = parsed.map(function (d) {
+            return d[2].trim();
+          });
+          var countries = [row.country].concat(other_countries).map(function (d) {
+            return d.toLowerCase();
+          });
+          var out = medals.map(function (medal, i) {
+            return {
+              oly_year: year,
+              event: row.event,
+              medal: medal.toLowerCase(),
+              dates: [{ date: dates[0], country: countries[i] }, { date: dates[1], country: countries[i + 1] }]
+            };
+          });
+          // console.log(medals, countries);
+          // console.log(out);
+          return {
+            v: out
+          };
+        }();
 
-    var years = data.map(function (d) {
-      return parseInt(d.oly_year);
-    }).concat(data.map(function (d) {
-      return new Date(d.decision_date).getFullYear();
-    }));
-    var year_extent = d3.extent(years);
-    var x_domain = [new Date(year_extent[0], 0, 1), new Date(year_extent[1] + 1, 0, 1)];
-
-    var root = get_hierarchy(data);
-
-    d3.cluster().size([height, 0])(root);
-
-    var leaves = root.leaves();
-
-    var y_cluster = d3.scaleOrdinal().domain(leaves.map(function (d) {
-      return d.data.id;
-    })).range(leaves.map(function (d) {
-      return d.x;
-    }));
-
-    function get_hierarchy(data) {
-      var nested = d3.nest().key(function () {
-        return "_root";
-      }).key(function (d) {
-        return d.ath_first_name + '-' + d.ath_last_name + '-' + d.oly_year;
-      }).entries(data);
-      var root = d3.hierarchy(nested[0], function (d) {
-        return d.values;
-      });
-      return root;
-    }
-
-    var x = d3.scaleTime().domain(x_domain);
-
-    var x_axis = d3.axisBottom(x).tickSize(-height).tickSizeOuter(0);
-
-    var svg = container.append('svg').attr('id', 'g-oly-1').classed('oly-chart', true).attr('height', height + margin.top + margin.bottom);
-
-    var frame = svg.append('g').attr('transform', 'translate(' + margin.left + ', ' + margin.top + ')');
-
-    frame.append('g').classed('axis axis--x', true).attr('transform', 'translate(0, ' + height + ')');
-
-    var rows_join = frame.selectAll('g.row').data(data);
-
-    var rows = rows_join.enter().append('g').classed('row', true).each(function () {
-      d3.select(this).append('g').classed('line', true).append('line').style('stroke', '#555');
-    }).merge(rows_join).attr('transform', function (d) {
-      return 'translate(0, ' + y_cluster(d.id) + ')';
-    });
-
-    var MONTH = 8 - 1; // August
-    var DAY = 1;
-
-    function getPoints(datum) {
-      return [{
-        type: 'awarded',
-        datum: datum,
-        parsed_date: new Date(parseInt(datum.oly_year), MONTH, DAY)
-      }, {
-        type: 'stripped',
-        datum: datum,
-        parsed_date: new Date(datum.decision_date)
-      }];
-    }
-
-    var medal_color = d3.scaleOrdinal().domain(['g', 's', 'b']).range(['gold', 'silver', '#C9AE5D']);
-
-    var points_join = rows.selectAll('g.point').data(getPoints);
-
-    var RADIUS = 4;
-
-    var points = points_join.enter().append('g').classed('point', true).each(function (d) {
-      if (d.type === 'awarded') {
-        d3.select(this).append('circle').attr('r', RADIUS).style('fill', function (d) {
-          return medal_color(d.datum.medal);
-        });
+        if ((typeof _ret === 'undefined' ? 'undefined' : _typeof(_ret)) === "object") return _ret.v;
       }
-    }).merge(points_join);
-
-    var labels_join = frame.selectAll('g.label').data(root.children);
-
-    var labels = labels_join.enter().append('g').classed('label', true).append('text').style('font-family', 'nyt-franklin').style('font-size', '0.7rem').style('fill', '#555').attr('dy', '-0.2rem').attr('dx', '0.3rem').text(function (d) {
-      var o = d.children[0].data;
-      return (o.ath_first_name + ' ' + o.ath_last_name).toUpperCase();
-    }).merge(labels_join);
-
-    var width$ = stream.fromEvent(window, 'resize').startWith(window).map(function () {
-      return $(svg.node().parentNode).innerWidth();
+      return [];
     });
-
-    width$.subscribe(function (chartWidth) {
-      x_axis.ticks(d3.timeYear.every(2));
-      var width = chartWidth - margin.left - margin.right;
-      x.range([0, width]);
-      container.selectAll('.oly-chart').attr('width', chartWidth).select('.axis--x').call(x_axis).each(function () {
-        d3.select(this).selectAll('line').style('stroke', '#ddd');
-        d3.select(this).selectAll('text').style('font-family', '"nyt-franklin"');
-      });
-      points.attr('transform', function (d) {
-        var circle = d3.select(this).select('circle');
-        var radius = circle.size() ? parseFloat(circle.attr('r')) : 0;
-        var offset = radius + 1;
-        return 'translate(' + (x(d.parsed_date) - offset) + ', 0)';
-      });
-      labels.attr('transform', function (parent) {
-        var _parent$children = _slicedToArray(parent.children, 1);
-
-        var data = _parent$children[0].data;
-
-        var parsed_date = getPoints(data)[0].parsed_date;
-        return 'translate(' + x(parsed_date) + ', ' + y_cluster(data.id) + ')';
-      });
-      rows.select('line').datum(function (d) {
-        return getPoints(d).map(function (d) {
-          return d.parsed_date;
-        });
-      }).attr('x1', function (d) {
-        return x(d[0]);
-      }).attr('x2', function (d) {
-        return x(d[1]);
-      });
-    });
-  };
-}
-
-function version_1(d3, $) {
-  // jshint ignore:line
-  return function (data) {
-    var margin = { top: 20, right: 20, bottom: 30, left: 40 };
-    var height = 200;
-
-    var svg = d3.select('#g-graphic').append('svg').attr('id', 'g-oly-1').classed('oly-chart', true).attr('height', height + margin.top + margin.bottom).style('border', '1px solid red');
-
-    var frame = svg.append('g').attr('transform', 'translate(' + margin.left + ', ' + margin.top + ')');
-
-    var cluster = d3.cluster();
-
-    var x = d3.scaleTime().domain([new Date(2004, 0, 0), new Date(2015, 0, 0)]);
-
-    var root = get_hierarchy(data.rows);
-
-    cluster.size([height, 0])(root);
-    var leaves = root.leaves();
-
-    var y = d3.scaleOrdinal().domain(leaves.map(function (d) {
-      return d.data.value;
-    })).range(leaves.map(function (d) {
-      return d.x;
-    }));
-
-    var medal_color = d3.scaleOrdinal().domain(['g', 's', 'b']).range(['gold', 'silver', '#C9AE5D']);
-
-    frame.selectAll('.point').data(data.rows).enter().append('g').classed('point', true).append('circle').attr('r', 3).style('fill', function (d) {
-      return ['g', 's', 'b'].indexOf(d.medal) !== -1 ? medal_color(d.medal) : 'red';
-    });
-
-    resizeAll();
-
-    function resizeAll() {
-      d3.selectAll('.oly-chart').attr('width', function () {
-        return $(this.parentNode).innerWidth();
-      });
-      var newWidth = svg.node().parentNode.clientWidth - margin.left - margin.right;
-      x.rangeRound([0, newWidth]);
-      frame.selectAll('.point').attr('transform', function (_ref) {
-        var year = _ref.year;
-        var month = _ref.month;
-        var day = _ref.day;
-        var full_name = _ref.full_name;
-
-        var date = new Date(year, parseInt(month) - 1, day);
-        return 'translate(' + x(date) + ', ' + y(full_name) + ')';
-      });
-    }
-
-    d3.select(window).on('resize', resizeAll);
-
-    function get_hierarchy(data) {
-      var nested = d3.nest().key(function () {
-        return "_root";
-      }).key(function (d) {
-        return d.id;
-      }).key(function (d) {
-        return d.athlete_order;
-      }).rollup(function (d) {
-        return d[0].full_name;
-      }).entries(data);
-      var tree = d3.hierarchy(nested[0], function (d) {
-        return d.values;
-      });
-      return tree;
-    }
+    var flat = _.flatten(parsed);
+    console.log(flat);
   };
 }

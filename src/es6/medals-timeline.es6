@@ -20,7 +20,7 @@ function version_2(d3, $, Rx, _) { // jshint ignore:line
   const stream = Rx.Observable;
   return function(container, data) {
     const margin = {top: 20, right: 40, bottom: 30, left: 40};
-    const height = 400;
+    const height = 500;
 
     data.sort((a,b) => d3.ascending(parseInt(a.oly_year), parseInt(b.oly_year)));
     data.shift();
@@ -46,6 +46,7 @@ function version_2(d3, $, Rx, _) { // jshint ignore:line
         .key(() => "_root")
         .key(d => `${d.ath_first_name}-${d.ath_last_name}-${d.oly_year}`)
         .entries(data);
+      // _.sortBy(nested[0].values, function(d) { debugger })
       const root = d3.hierarchy(nested[0], d => d.values);
       return root;
     }
@@ -89,11 +90,13 @@ function version_2(d3, $, Rx, _) { // jshint ignore:line
     const DAY = 1;
 
     function getPoints(datum) {
+      // console.log(datum.oly_month)
+      const month = parseInt(datum.oly_month) - 1 || MONTH;
       return [
         {
           type: 'awarded',
           datum,
-          parsed_date: new Date(parseInt(datum.oly_year), MONTH, DAY)
+          parsed_date: new Date(parseInt(datum.oly_year), month, DAY)
         },
         {
           type: 'stripped',
