@@ -14,7 +14,6 @@ require([
   'node_modules/rx/dist/rx.all'
 ], function(NYTG_ASSETS, NYTG_BIG_ASSETS, $, _, PageManager, Analytics, balanceText, d3, data, Rx) { // jshint ignore:line
   const HEIGHT = 500;
-  // const COUNTRY_RATIO = 0.1;
   main(d3, $, Rx, _)({
     container: d3.select('#g-graphic'),
     data: data.stripped_data_v3,
@@ -31,11 +30,13 @@ function main(d3, $, Rx, _) {
     .range(['gold', 'silver', '#C9AE5D']);
 
   return function({ container, data, height }) {
-    const tables_row = init()({ container, height });
+    const _container = init()({ container, height });
+    const tables_row = _container.append('div')
+      .classed('row', true);
     const flat = get_flat_data(_)(data);
     // debugger
     const timeDomain = [new Date('2007-10-01'), new Date('2016-12-30')];
-    const date$ = addControls(d3, Rx)({ container, width: 500, timeDomain });
+    const date$ = addControls(d3, Rx)({ container: _container, width: 500, timeDomain });
     date$.subscribe(date => {
       // const filtered = flat.filter(e => date >= e.date);
       const nested = d3.nest()
@@ -49,18 +50,28 @@ function main(d3, $, Rx, _) {
         .append('div')
         .classed('col-sm-3 col-xs-4 event', true)
         // .style('height', '100px')
-        .style('border', '1px solid blue')
-        .each(function() {
+        // .style('border', '1px solid blue')
+        .each(function(d) {
           const div = d3.select(this);
+          const parsed = d.key.match(/^(.+?),(.+)/);
+
+          console.log(parsed);
           div.append('h4')
             .style('font-family', 'nyt-franklin')
             .style('font-size', '10px')
             .style('text-transform', 'uppercase')
-            .text(d => d.key);
+            .style('margin-bottom', '3px')
+            .text(() => parsed[1]);
+
+          div.append('h5')
+            .style('font-family', 'nyt-franklin')
+            .style('font-size', '8px')
+            .style('text-transform', 'uppercase')
+            .text(() => parsed[2].trim());
           div.append('svg')
             .style('height', svg_height)
             .style('width', '100%')
-            .style('border', '1px solid green')
+            // .style('border', '1px solid green')
             .each(function() {
               d3.select(this)
                 .append('g').classed('medals', true)
@@ -77,41 +88,30 @@ function main(d3, $, Rx, _) {
 
       const ROW_HEIGHT = 10;
 
+      // function compareMedals(a, b) {
+      //
+      // }
+
       const country_join = events.select('svg')
         .select('.countries')
-        // .each(function(d) )
         .selectAll('.country')
         .data(function(d) {
           const { values } = d;
-          // const name_scale = d3.scale
-          // const date_nest = d3.nest()
-          //   .key(d => d.date)
-          //   .entries(values);
-          // const latest_date = _.chain(date_nest)
-          //   .filter(e => date > new Date(e.key))
-          //   .last()
-          //   .value();
-          // if (typeof latest_date === 'undefined') return [];
           const name_nest = d3.nest()
             .key(d => d.name)
             .entries(values);
-
           const scale = d3.scaleOrdinal()
             .domain(name_nest.map(d => d.key))
             .range(name_nest.map((d,i) => i * ROW_HEIGHT));
-
           name_scale.set(this, scale);
-          // const countries = latest_date.values;
-          // debugger
-          // const all_names = name_nest;
           return name_nest;
-          // return countries;
         }, d => d.key);
 
-      const country_g = country_join.enter()
+      country_join.enter()
         .append('g').classed('country', true)
+        .style('opacity', d => d.key === 'null' ? 0 : 1)
         .append('text')
-        .text(d => d.key)
+        .text(d => d.key === 'null' ? 'un-allocated' : d.key)
         .style('font-size', '8px')
         .style('text-transform', 'uppercase')
         .style('font-family', 'nyt-franklin')
@@ -119,21 +119,21 @@ function main(d3, $, Rx, _) {
         .merge(country_join);
 
       events.selectAll('.country')
-        .attr('transform', function(d, i) {
+        .attr('transform', function(d) {
           // name_scale;
           // debugger
-          const y = name_scale.get(this)(i);
+          const y = name_scale.get(this)(d.key);
           return `translate(0, ${y})`;
         });
 
       const medal_join = events.select('svg')
-        .select('.medals')
+        .select('.countries')
         .selectAll('.medal')
         .data(({ values }) => {
           const medals_nest = d3.nest()
             .key(d => d.medal)
             .entries(values);
-          return medals_nest
+          return medals_nest;
         }, d => d.key);
 
       medal_join.enter()
@@ -144,27 +144,55 @@ function main(d3, $, Rx, _) {
 
       events.selectAll('.medal')
         .transition()
-        .attr('translate', d => {
-          date;
-          const recent = _.last(d.values.filter(val => date >= val.date));
-          if (! recent) debugger;
-          debugger;
-        })
+        .attr('transform', function(d) {
+          let recent = _.last(d.values.filter(val => date >= val.date));
+          if (! recent) recent = d.values[0];
+          const y = name_scale.get(this)(recent.name);
+          const x = -10;
+          return `translate(${x}, ${y})`;
+        });
 
-      // debugger;
+      events.selectAll('.country')
+        .each(function(d) {
+          const { is_stripped_ath, stripped_date } = d.values[0];
+          const has_been_stripped = date >= new Date(stripped_date);
+          if (has_been_stripped && d.key === 'null') {
+            d3.select(this).transition().style('opacity', 1);
+          } else if (d.key === 'null') {
+            d3.select(this).transition().style('opacity', 0);
+          }
+          if (is_stripped_ath && has_been_stripped) {
+            const text = d3.select(this).select('text').node();
+            const width = $(text).width();
+            d3.select(this).selectAll('line')
+              .data([width])
+              .enter()
+              .append('line')
+              .attr('y1', -1).attr('y2', -1)
+              .attr('x2', 0)
+              .style('opacity', 1)
+              .style('stroke', 'red')
+              .transition()
+              .attr('x2', width);
+          } else {
+            d3.select(this).selectAll('line')
+              .transition()
+              .style('opacity', 0)
+              .transition().duration(0)
+              .remove();
+          }
+
+        });
+
     });
   };
 }
 
 function init() {
-  return function({ container, height }) {
-    const _container = container.append('div')
-      .classed('container', true)
-      .style('border', '1px solid red')
-      // .style('height', `${height}px`);
-    const tables_row = _container.append('div')
-      .classed('row', true);
-    return tables_row;
+  return function({ container }) {
+    return container.append('div')
+      .style('margin-top', '20px')
+      .classed('container', true);
   };
 }
 
@@ -179,18 +207,6 @@ function get_flat_data(_) {
   };
 }
 
-// function get_points(_) {
-//   return function(data) {
-//     const points = _.chain([ 2008 ])
-//       .map(year => data.filter(d => parseInt(d.oly_year) === year))
-//       .flatten()
-//       .map(parse_row_2)
-//       .flatten()
-//       .value();
-//     return points;
-//   };
-// }
-
 function addControls(d3, Rx) {
   return function({ container, width, timeDomain }) {
     const date$ = new Rx.ReplaySubject(1);
@@ -201,8 +217,8 @@ function addControls(d3, Rx) {
     const div = container.append('div');
     const svg = div.append('svg')
       .style('width', width)
-      .style('height', height)
-      .style('border', '1px solid #aaa');
+      .style('height', height);
+
     const frame = svg.append('g')
       .classed('frame', true)
       .attr('transform', `translate(${margin.left}, ${margin.top})`);
@@ -242,7 +258,7 @@ function addControls(d3, Rx) {
     axis_g.call(axis);
 
     const buttons = div.append('div').classed('buttons', true);
-    buttons.append('button').text('play').classed('play', true);
+
     buttons.selectAll('button.date')
       .data(['2008-08-02', '2009-12-01', '2016-09-01'])
       .enter().append('button')
@@ -290,6 +306,7 @@ function parse_row_2(row) {
     oly_year, event, country, upgrade_athletes, stripped_date,
     stripped_medal, was_upgraded, name
   } = row;
+  // const stripped_athlete = name;
   const award_date = `${parseInt(oly_year)}-08-01`;
   const dates = [award_date, stripped_date].map(d => new Date(d));
   const [ medals, other_countries, other_names ] = was_upgraded.match(/yes/) ?
@@ -297,6 +314,7 @@ function parse_row_2(row) {
     [[stripped_medal], [null], [null]];
   const countries = [country.toLowerCase()].concat(other_countries);
   const names = [name.toLowerCase()].concat(other_names);
+  const is_stripped = [true];
   const all = medals.map(m => m.toLowerCase())
     .map((medal, i) => {
       return {
@@ -304,45 +322,19 @@ function parse_row_2(row) {
         event,
         medal,
         dates: [
-          { date: dates[0], country: countries[i], name: names[i] },
-          { date: dates[1], country: countries[i + 1], name: names[i + 1] }
+          { date: dates[0], country: countries[i], name: names[i], is_stripped_ath: is_stripped[i] },
+          { date: dates[1], is_stripped_date: true, country: countries[i + 1], name: names[i + 1], is_stripped_ath: is_stripped[i + 1] }
         ]
       };
     })
     .map(nested => {
-      const { oly_year, event, medal } = nested;
+      const { oly_year, event, medal, is_stripped_date } = nested;
       return nested.dates.map(date => {
-        return Object.assign({}, date, { oly_year, event, medal });
+        return Object.assign({}, date, { oly_year, event, medal, is_stripped_date, stripped_date });
       });
     });
   return all;
 }
-
-// function parse_row(row) {
-//   const {
-//     oly_year, event, country, upgrade_athletes, stripped_date,
-//     stripped_medal, was_upgraded
-//   } = row;
-//   // NOTE: Assuming August 1st
-//   const award_date = `${parseInt(oly_year)}-08-01`;
-//   const dates = [award_date, stripped_date].map(d => new Date(d));
-//   const [ medals, other_countries ] = was_upgraded.match(/yes/) ?
-//     parsed_info(upgrade_athletes) :
-//     [[stripped_medal], [null]];
-//   const countries = [country.toLowerCase()].concat(other_countries);
-//   return medals.map(m => m.toLowerCase())
-//     .map((medal, i) => {
-//       return {
-//         oly_year,
-//         event,
-//         medal,
-//         dates: [
-//           { date: dates[0], country: countries[i] },
-//           { date: dates[1], country: countries[i + 1] }
-//         ]
-//       };
-//     });
-// }
 
 function parsed_info(string) {
   const parsed = parse_ath_string(string);
