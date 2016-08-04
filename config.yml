@@ -94,22 +94,9 @@ google_spreadsheets:
 #   - 100000003182219
 
 # MULTIPLE ASSETS
-# pages:
-#   promo:
-#     min_width: 300
-#     max_width: 720
-#     show_in_compatible_apps: 'yes'
-#     page_template: nyt5-article-embed
-#     scoop_asset_id:
-#     scoop_slug:
-#     scoop_username:
-#     scoop_external_edit_key:
-#     link: put-in-your-live-link
-#   map:
-#     min_width: 300
-#     max_width: 1050
-#     show_in_compatible_apps: 'yes'
-#     page_template: nyt5-article-embed
+pages:
+  tables:
+    page_template: nyt5-blank
 
 # SCOOP JSON
 # Run `make download` to get the latest JSON

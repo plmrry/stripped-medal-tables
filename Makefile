@@ -3,6 +3,7 @@ GENERATED_FILES = \
 	build/style.css \
 	data \
 	public/index.html \
+	public/tables.html \
 	public/_assets/build.js
 
 all: .gitignore .gitattributes $(GENERATED_FILES)
@@ -43,6 +44,11 @@ data:
 
 src/script.js: src/es6/script.es6 .babelrc
 		node_modules/.bin/babel $< -o $@
+
+public/tables.html: bin/render-template config.yml src/* src/script.js
+	mkdir -p data
+	mkdir -p page-templates
+	bin/render-template -o $@
 
 public/index.html: bin/render-template config.yml src/* src/script.js
 	mkdir -p data
