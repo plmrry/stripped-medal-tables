@@ -36,7 +36,7 @@ function main(d3, $, Rx, _) {
     const flat = get_flat_data(_)(data);
     // debugger
     const timeDomain = [new Date('2007-10-01'), new Date('2016-12-30')];
-    const date$ = addControls(d3, Rx)({ container: _container, width: 500, timeDomain });
+    const date$ = addControls(d3, Rx)({ container: _container, width: 500, timeDomain, data: flat });
     date$.subscribe(date => {
       // const filtered = flat.filter(e => date >= e.date);
       const nested = d3.nest()
@@ -55,17 +55,17 @@ function main(d3, $, Rx, _) {
           const div = d3.select(this);
           const parsed = d.key.match(/^(.+?),(.+)/);
 
-          console.log(parsed);
+          // console.log(parsed);
           div.append('h4')
             .style('font-family', 'nyt-franklin')
-            .style('font-size', '10px')
+            .style('font-size', '12px')
             .style('text-transform', 'uppercase')
             .style('margin-bottom', '3px')
             .text(() => parsed[1]);
 
           div.append('h5')
             .style('font-family', 'nyt-franklin')
-            .style('font-size', '8px')
+            .style('font-size', '10px')
             .style('text-transform', 'uppercase')
             .text(() => parsed[2].trim());
           div.append('svg')
@@ -112,7 +112,7 @@ function main(d3, $, Rx, _) {
         .style('opacity', d => d.key === 'null' ? 0 : 1)
         .append('text')
         .text(d => d.key === 'null' ? 'un-allocated' : d.key)
-        .style('font-size', '8px')
+        .style('font-size', '10px')
         .style('text-transform', 'uppercase')
         .style('font-family', 'nyt-franklin')
         .style('alignment-baseline', 'middle')
@@ -208,7 +208,16 @@ function get_flat_data(_) {
 }
 
 function addControls(d3, Rx) {
-  return function({ container, width, timeDomain }) {
+  return function({ container, width, timeDomain, data }) {
+    const all_dates = _.chain(data)
+      .filter(d => d.is_stripped_date)
+      .sortBy(d => d.date)
+      .pluck('date')
+      .unique()
+      .value();
+
+    console.log(all_dates);
+
     const date$ = new Rx.ReplaySubject(1);
 
     const height = 100;
@@ -229,6 +238,13 @@ function addControls(d3, Rx) {
 
     let playing = false;
 
+    frame.selectAll('.date')
+      .data(all_dates)
+      .enter()
+      .append('g').classed('date', true)
+      .attr('transform', d => `translate(${scale(d)}, 0)`)
+      .append('circle').attr('r', 2);
+
     date$.subscribe(date => {
       const dot_join = frame.selectAll('.current-date')
         .data([date]);
@@ -237,15 +253,15 @@ function addControls(d3, Rx) {
         .classed('current-date', true)
         .each(function() {
           d3.select(this).append('circle')
-            .attr('r', '4')
+            .attr('r', 4)
             .style('opacity', 0.9);
         })
         // .attr('data-transform-x', d => scale(d))
-        .attr('transform', d => `translate(${scale(d)}, 0)`)
+        .attr('transform', d => `translate(${scale(d)}, -10)`)
         .merge(dot_join)
         .transition()
         .duration(playing ? 0 : 500)
-        .attr('transform', d => `translate(${scale(d)}, 0)`);
+        .attr('transform', d => `translate(${scale(d)}, -10)`);
     });
 
     const axis_g = frame.append('g').classed('axis axis--x', true);
@@ -258,6 +274,16 @@ function addControls(d3, Rx) {
     axis_g.call(axis);
 
     const buttons = div.append('div').classed('buttons', true);
+
+    const next$ = Rx.Observable.create(observer => {
+      var current = -1;
+      buttons.append('button').text('next').on('click', function() {
+        current++;
+        if (current === all_dates.length) current = 0;
+        const date = all_dates[current];
+        observer.onNext(date);
+      });
+    });
 
     buttons.selectAll('button.date')
       .data(['2008-08-02', '2009-12-01', '2016-09-01'])
@@ -292,7 +318,7 @@ function addControls(d3, Rx) {
       });
     }).shareReplay(1);
 
-    const dateSink$ = Rx.Observable.merge(animate$, click$)
+    const dateSink$ = Rx.Observable.merge(animate$, click$, next$)
       .startWith(new Date('2008-08-02'));
 
     dateSink$.subscribe(date$);
@@ -328,9 +354,9 @@ function parse_row_2(row) {
       };
     })
     .map(nested => {
-      const { oly_year, event, medal, is_stripped_date } = nested;
+      const { oly_year, event, medal } = nested;
       return nested.dates.map(date => {
-        return Object.assign({}, date, { oly_year, event, medal, is_stripped_date, stripped_date });
+        return Object.assign({}, date, { oly_year, event, medal, stripped_date });
       });
     });
   return all;

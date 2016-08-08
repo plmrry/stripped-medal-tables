@@ -29120,7 +29120,7 @@ function main(d3, $, Rx, _) {
     var flat = get_flat_data(_)(data);
     // debugger
     var timeDomain = [new Date('2007-10-01'), new Date('2016-12-30')];
-    var date$ = addControls(d3, Rx)({ container: _container, width: 500, timeDomain: timeDomain });
+    var date$ = addControls(d3, Rx)({ container: _container, width: 500, timeDomain: timeDomain, data: flat });
     date$.subscribe(function (date) {
       // const filtered = flat.filter(e => date >= e.date);
       var nested = d3.nest().key(function (d) {
@@ -29136,12 +29136,12 @@ function main(d3, $, Rx, _) {
         var div = d3.select(this);
         var parsed = d.key.match(/^(.+?),(.+)/);
 
-        console.log(parsed);
-        div.append('h4').style('font-family', 'nyt-franklin').style('font-size', '10px').style('text-transform', 'uppercase').style('margin-bottom', '3px').text(function () {
+        // console.log(parsed);
+        div.append('h4').style('font-family', 'nyt-franklin').style('font-size', '12px').style('text-transform', 'uppercase').style('margin-bottom', '3px').text(function () {
           return parsed[1];
         });
 
-        div.append('h5').style('font-family', 'nyt-franklin').style('font-size', '8px').style('text-transform', 'uppercase').text(function () {
+        div.append('h5').style('font-family', 'nyt-franklin').style('font-size', '10px').style('text-transform', 'uppercase').text(function () {
           return parsed[2].trim();
         });
         div.append('svg').style('height', svg_height).style('width', '100%')
@@ -29181,7 +29181,7 @@ function main(d3, $, Rx, _) {
         return d.key === 'null' ? 0 : 1;
       }).append('text').text(function (d) {
         return d.key === 'null' ? 'un-allocated' : d.key;
-      }).style('font-size', '8px').style('text-transform', 'uppercase').style('font-family', 'nyt-franklin').style('alignment-baseline', 'middle').merge(country_join);
+      }).style('font-size', '10px').style('text-transform', 'uppercase').style('font-family', 'nyt-franklin').style('alignment-baseline', 'middle').merge(country_join);
 
       events.selectAll('.country').attr('transform', function (d) {
         // name_scale;
@@ -29260,6 +29260,15 @@ function addControls(d3, Rx) {
     var container = _ref4.container;
     var width = _ref4.width;
     var timeDomain = _ref4.timeDomain;
+    var data = _ref4.data;
+
+    var all_dates = _.chain(data).filter(function (d) {
+      return d.is_stripped_date;
+    }).sortBy(function (d) {
+      return d.date;
+    }).pluck('date').unique().value();
+
+    console.log(all_dates);
 
     var date$ = new Rx.ReplaySubject(1);
 
@@ -29275,16 +29284,20 @@ function addControls(d3, Rx) {
 
     var playing = false;
 
+    frame.selectAll('.date').data(all_dates).enter().append('g').classed('date', true).attr('transform', function (d) {
+      return 'translate(' + scale(d) + ', 0)';
+    }).append('circle').attr('r', 2);
+
     date$.subscribe(function (date) {
       var dot_join = frame.selectAll('.current-date').data([date]);
       dot_join.enter().append('g').classed('current-date', true).each(function () {
-        d3.select(this).append('circle').attr('r', '4').style('opacity', 0.9);
+        d3.select(this).append('circle').attr('r', 4).style('opacity', 0.9);
       })
       // .attr('data-transform-x', d => scale(d))
       .attr('transform', function (d) {
-        return 'translate(' + scale(d) + ', 0)';
+        return 'translate(' + scale(d) + ', -10)';
       }).merge(dot_join).transition().duration(playing ? 0 : 500).attr('transform', function (d) {
-        return 'translate(' + scale(d) + ', 0)';
+        return 'translate(' + scale(d) + ', -10)';
       });
     });
 
@@ -29297,6 +29310,16 @@ function addControls(d3, Rx) {
     axis_g.call(axis);
 
     var buttons = div.append('div').classed('buttons', true);
+
+    var next$ = Rx.Observable.create(function (observer) {
+      var current = -1;
+      buttons.append('button').text('next').on('click', function () {
+        current++;
+        if (current === all_dates.length) current = 0;
+        var date = all_dates[current];
+        observer.onNext(date);
+      });
+    });
 
     buttons.selectAll('button.date').data(['2008-08-02', '2009-12-01', '2016-09-01']).enter().append('button').classed('date', true).text(function (d) {
       return d;
@@ -29327,7 +29350,7 @@ function addControls(d3, Rx) {
       });
     }).shareReplay(1);
 
-    var dateSink$ = Rx.Observable.merge(animate$, click$).startWith(new Date('2008-08-02'));
+    var dateSink$ = Rx.Observable.merge(animate$, click$, next$).startWith(new Date('2008-08-02'));
 
     dateSink$.subscribe(date$);
 
@@ -29375,10 +29398,9 @@ function parse_row_2(row) {
     var oly_year = nested.oly_year;
     var event = nested.event;
     var medal = nested.medal;
-    var is_stripped_date = nested.is_stripped_date;
 
     return nested.dates.map(function (date) {
-      return Object.assign({}, date, { oly_year: oly_year, event: event, medal: medal, is_stripped_date: is_stripped_date, stripped_date: stripped_date });
+      return Object.assign({}, date, { oly_year: oly_year, event: event, medal: medal, stripped_date: stripped_date });
     });
   });
   return all;

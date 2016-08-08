@@ -42,7 +42,7 @@ data:
 .babelrc:
 	@echo "{ \"presets\": [\"es2015\"] }" > .babelrc
 
-src/script.js: src/es6/script.es6 .babelrc
+src/script.js: src/es6/script.es6 .babelrc node_modules/.bin/babel
 		node_modules/.bin/babel $< -o $@
 
 public/tables.html: bin/render-template config.yml src/* src/script.js

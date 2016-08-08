@@ -143,7 +143,7 @@ function version_2(d3, $, Rx, _) { // jshint ignore:line
       .attr('dx', '0.3rem')
       .text(d => {
         const o = d.children[0].data;
-        return `${o.ath_first_name} ${o.ath_last_name}`.toUpperCase();
+        return `${o.name}`.toUpperCase();
       })
       .merge(labels_join);
 
@@ -175,7 +175,11 @@ function version_2(d3, $, Rx, _) { // jshint ignore:line
         return `translate(${x(parsed_date)}, ${y_cluster(data.id)})`;
       });
       rows.select('line')
-        .datum(d => getPoints(d).map(d => d.parsed_date))
+        .datum(d => {
+          var points = getPoints(d).map(d => d.parsed_date);
+          debugger;
+          return points;
+        })
         .attr('x1', d => x(d[0]))
         .attr('x2', d => x(d[1]));
     });
